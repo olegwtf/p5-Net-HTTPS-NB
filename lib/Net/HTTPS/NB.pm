@@ -6,6 +6,78 @@ use IO::Socket::SSL 0.98;
 use Exporter;
 use vars qw($VERSION @ISA @EXPORT $HTTPS_ERROR);
 
+=head1 NAME
+
+Net::HTTPS::NB - Non-blocking HTTPS client
+
+=head1 SYNOPSIS
+
+=over
+
+=item Example from L<Net::HTTP::NB>
+
+	use Net::HTTPS::NB;
+	use IO::Select;
+	use strict;
+
+	my $s = Net::HTTPS::NB->new(Host => "pause.perl.org") || die $@;
+	$s->write_request(GET => "/");
+
+	my $sel = IO::Select->new($s);
+
+	READ_HEADER: {
+		die "Header timeout" unless $sel->can_read(10);
+		my($code, $mess, %h) = $s->read_response_headers;
+		redo READ_HEADER unless $code;
+	}
+
+	while (1) {
+		die "Body timeout" unless $sel->can_read(10);
+		my $buf;
+		my $n = $s->read_entity_body($buf, 1024);
+		last unless $n;
+		print $buf;
+	}
+
+=item Example of non-blocking connect
+
+	use strict;
+	use Net::HTTPS::NB;
+	use IO::Select;
+
+	my $sock = Net::HTTPS::NB->new(Host => 'encrypted.google.com', Blocking => 0);
+	my $sele = IO::Select->new($sock);
+
+	until ($sock->connected) {
+		if ($HTTPS_ERROR == HTTPS_WANT_READ) {
+			$sele->can_read();
+		}
+		elsif($HTTPS_ERROR == HTTPS_WANT_WRITE) {
+			$sele->can_write();
+		}
+		else {
+			die 'Unknown error: ', $HTTPS_ERROR;
+		}
+	}
+
+=back
+
+=head1 DESCRIPTION
+
+Same interface as Net::HTTPS but it will never try multiple reads when the
+read_response_headers() or read_entity_body() methods are invoked. In addition
+allows non-blocking connect.
+
+=over
+
+=item If read_response_headers() did not see enough data to complete the headers an empty list is returned. 
+
+=item If read_entity_body() did not see new entity data in its read the value -1 is returned.
+
+=back
+
+=cut
+
 $VERSION = 0.01;
 
 # we only supports IO::Socket::SSL now
@@ -20,9 +92,34 @@ use constant {
 };
 *HTTPS_ERROR = \$SSL_ERROR;
 
-# need export some stuff for errors handling
+=head1 PACKAGE CONSTANTS
+
+Imported by default
+
+	HTTPS_WANT_READ
+	HTTPS_WANT_WRITE
+
+=head1 PACKAGE VARIABLES
+
+Imported by default
+
+	$HTTPS_ERROR
+
+=cut
+
+# need export some stuff for error handling
 @EXPORT = qw($HTTPS_ERROR HTTPS_WANT_READ HTTPS_WANT_WRITE);
 @ISA = qw(Net::HTTPS Exporter);
+
+=head1 METHODS
+
+=head2 new(%cfg)
+
+Same as Net::HTTPS::new, but in addition allows `Blocking' parameter. By setting
+this parameter to 0 you can perform non-blocking connect. See connected() to
+determine when connection completed.
+
+=cut
 
 sub new {
 	my ($class, %args) = @_;
@@ -52,6 +149,15 @@ sub new {
 	
 	return $self;
 }
+
+=head2 connected
+
+Returns true value when connection completed (https handshake done). Otherwise
+returns false. In this case you can check $HTTPS_ERROR to determine what handshake
+need for, read or write. $HTTPS_ERROR could be HTTPS_NEED_READ or HTTPS_NEED_WRITE
+respectively. See L</SYNOPSIS>.
+
+=cut
 
 sub connected {
 	my $self = shift;
@@ -83,6 +189,14 @@ sub close {
 	${*$self}{httpsnb_connected} = 0;
 	return $self->SUPER::close();
 }
+
+=head2 blocking($flag)
+
+As opposed to Net::HTTPS where blocking method consciously broken you
+can set socket blocking. For example you can return socket to blocking state
+after non-blocking connect.
+
+=cut
 
 sub blocking {
 	# blocking() is breaked in Net::HTTPS
@@ -142,3 +256,9 @@ sub read_entity_body {
 }
 
 1;
+
+=head1 SEE ALSO
+
+L<Net::HTTP>, L<Net::HTTP::NB>
+
+=cut
