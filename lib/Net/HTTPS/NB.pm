@@ -261,4 +261,11 @@ sub read_entity_body {
 
 L<Net::HTTP>, L<Net::HTTP::NB>
 
+=head1 COPYRIGHT
+
+Copyright 2011 Oleg G <oleg@cpan.org>.
+
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
 =cut
