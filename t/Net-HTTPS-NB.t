@@ -15,13 +15,14 @@ SKIP: {
 	my $sock = Net::HTTPS::NB->new(Host => $host, PeerPort => $port);
 	
 	ok(time() - $start >= 3, 'Blocking connect');
-	ok(! defined $sock, 'https init error');
+	ok(! defined $sock, 'HTTPS init error');
 	
 	my ($host, $port) = make_server();
 	$start = time();
 	$sock = Net::HTTPS::NB->new(Host => $host, PeerPort => $port, Blocking => 0);
 	
 	ok(time() - $start < 3, 'Non blocking connect');
+	is($sock->connected, 0, 'Invalid socket connection');
 	isa_ok($sock, 'Net::HTTPS::NB');
 }
 

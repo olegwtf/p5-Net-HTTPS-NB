@@ -134,18 +134,13 @@ sub new {
 	
 	# and upgrade it to SSL then
 	$class->start_SSL($self, SSL_startHandshake => 0);
-	$HTTPS_ERROR = HTTPS_WANT_WRITE;
 	
-	if (exists($args{Blocking}) && !$args{Blocking} && $self->SUPER::connected) {
-		# non-blocking connect
-		$self->connect_SSL();
-	}
-	elsif (!exists($args{Blocking}) || $args{Blocking}) {
+	if (!exists($args{Blocking}) || $args{Blocking}) {
 		# blocking connect
-		$self->connect_SSL()
+		$self->connected()
 			or return;
-		${*$self}{httpsnb_connected} = 1;
 	}
+	# non-blocking handshake will started after SUPER::connected
 	
 	return $self;
 }
@@ -163,22 +158,24 @@ sub connected {
 	my $self = shift;
 	
 	if (exists ${*$self}{httpsnb_connected}) {
+		# already connected or disconnected
 		return ${*$self}{httpsnb_connected};
 	}
 	
 	if (${*$self}{httpsnb_super_connected}) {
-		my $st = $self->connect_SSL();
-		if ($st) {
+		if ( $self->connect_SSL() ) {
 			return ${*$self}{httpsnb_connected} = 1;
 		}
 		return 0;
 	}
 	
 	if ($self->SUPER::connected) {
+		# SUPER just connected. Start handshake
 		${*$self}{httpsnb_super_connected} = 1;
 		return $self->connected;
 	}
 	
+	# SUPER still not connected
 	$HTTPS_ERROR = HTTPS_WANT_WRITE;
 	return 0;
 }
@@ -202,7 +199,7 @@ sub blocking {
 	# blocking() is breaked in Net::HTTPS
 	# restore it here
 	my $self = shift;
-	$self->IO::Socket::INET::blocking(@_);
+	$self->IO::Socket::blocking(@_);
 }
 
 # code below copied from Net::HTTP::NB with some modifications
@@ -211,6 +208,8 @@ sub blocking {
 sub sysread {
 	my $self = shift;
 	unless (${*$self}{'httpsnb_reading'}) {
+		# allow reading without restrictions when called
+		# not from our methods
 		return $self->SUPER::sysread(@_);
 	}
 	
