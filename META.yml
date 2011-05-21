@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Net-HTTPS-NB
-version:            0.01
+version:            0.1
 abstract:           Non-blocking HTTPS client
 author:
     - Oleg G <oleg@cpan.org>

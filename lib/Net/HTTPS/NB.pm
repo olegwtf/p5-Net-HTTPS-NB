@@ -6,6 +6,8 @@ use IO::Socket::SSL 0.98;
 use Exporter;
 use vars qw($VERSION @ISA @EXPORT $HTTPS_ERROR);
 
+$VERSION = 0.10;
+
 =head1 NAME
 
 Net::HTTPS::NB - Non-blocking HTTPS client
@@ -62,6 +64,8 @@ Net::HTTPS::NB - Non-blocking HTTPS client
 
 =back
 
+See `examples' subdirectory for more examples.
+
 =head1 DESCRIPTION
 
 Same interface as Net::HTTPS but it will never try multiple reads when the
@@ -78,14 +82,12 @@ allows non-blocking connect.
 
 =cut
 
-$VERSION = 0.01;
-
 # we only supports IO::Socket::SSL now
 # use it force
 $Net::HTTPS::SSL_SOCKET_CLASS = 'IO::Socket::SSL';
 require Net::HTTPS;
 
-# make aliases
+# make aliases to IO::Socket::SSL variables and constants
 use constant {
 	HTTPS_WANT_READ  => SSL_WANT_READ,
 	HTTPS_WANT_WRITE => SSL_WANT_WRITE,
@@ -145,7 +147,7 @@ sub new {
 	return $self;
 }
 
-=head2 connected
+=head2 connected()
 
 Returns true value when connection completed (https handshake done). Otherwise
 returns false. In this case you can check $HTTPS_ERROR to determine what handshake
@@ -163,6 +165,8 @@ sub connected {
 	}
 	
 	if (${*$self}{httpsnb_super_connected}) {
+		# SUPER already connected
+		# start/continue SSL handshaking
 		if ( $self->connect_SSL() ) {
 			return ${*$self}{httpsnb_connected} = 1;
 		}
@@ -170,7 +174,7 @@ sub connected {
 	}
 	
 	if ($self->SUPER::connected) {
-		# SUPER just connected. Start handshake
+		# SUPER just connected. Start handshaking
 		${*$self}{httpsnb_super_connected} = 1;
 		return $self->connected;
 	}
