@@ -17,7 +17,7 @@ SKIP: {
 	ok(time() - $start >= 3, 'Blocking connect');
 	ok(! defined $sock, 'HTTPS init error');
 	
-	my ($host, $port) = make_server();
+	($host, $port) = make_server();
 	$start = time();
 	$sock = Net::HTTPS::NB->new(Host => $host, PeerPort => $port, Blocking => 0);
 	
