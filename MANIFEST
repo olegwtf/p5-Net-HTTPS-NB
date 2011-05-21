@@ -5,3 +5,4 @@ t/Net-HTTPS-NB.t
 Makefile.PL
 CHANGES
 README
+examples/google_multi.pl
