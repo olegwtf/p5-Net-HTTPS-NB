@@ -6,7 +6,7 @@ use IO::Socket::SSL 0.98;
 use Exporter;
 use vars qw($VERSION @ISA @EXPORT $HTTPS_ERROR);
 
-$VERSION = 0.10;
+$VERSION = 0.11;
 
 =head1 NAME
 
@@ -180,7 +180,13 @@ sub connected {
 	}
 	
 	# SUPER still not connected
-	$HTTPS_ERROR = HTTPS_WANT_WRITE;
+	if ($! = $self->sockopt(SO_ERROR)) {
+		# some error while connecting
+		$HTTPS_ERROR = $!;
+	}
+	else {
+		$HTTPS_ERROR = HTTPS_WANT_WRITE;
+	}
 	return 0;
 }
 

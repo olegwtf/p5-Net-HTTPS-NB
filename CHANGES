@@ -1,4 +1,8 @@
 Revision history for Perl extension Net::HTTPS::NB.
 
+0.11  Mon May 23 13:54:47 2011
+      - Assign properly value to $HTTP_ERROR when socket connection fails
+      - Fixed typo in the test
+
 0.10  Sat May 21 12:02:35 2011
-      - original version;
+      - original version
