@@ -39,5 +39,5 @@ sub make_server {
 		exit;
 	}
 	
-	return ($serv->sockhost, $serv->sockport);
+	return ($serv->sockhost eq "0.0.0.0" ? "127.0.0.1" : $serv->sockhost, $serv->sockport);
 }
