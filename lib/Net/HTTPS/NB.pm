@@ -6,7 +6,7 @@ use IO::Socket::SSL 0.98;
 use Exporter;
 use vars qw($VERSION @ISA @EXPORT $HTTPS_ERROR);
 
-$VERSION = 0.11;
+$VERSION = 0.12;
 
 =head1 NAME
 

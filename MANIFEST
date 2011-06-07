@@ -3,6 +3,6 @@ lib/Net/HTTPS/NB.pm
 META.yml
 t/Net-HTTPS-NB.t
 Makefile.PL
-CHANGES
+Changes
 README
 examples/google_multi.pl
