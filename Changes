@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::HTTPS::NB.
 
+0.13  Wed Jun 12 21:31:43 2013
+       - Fix for rt #85931: ability to specify SSL_* options
+
 0.12  Tue Jun  7 18:49:45 2011
        - Test::More dependency added
        - tests fixes: OpenBSD doesn't know how to connect to 0.0.0.0
