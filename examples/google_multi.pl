@@ -11,7 +11,7 @@ use warnings;
 
 my $loop = AnyEvent->condvar;
 
-for my $q qw(perl python ruby php lua) {
+for my $q (qw(perl python ruby php lua)) {
 	my $sock = Net::HTTPS::NB->new(Host => 'encrypted.google.com', Blocking => 0)
 		or next;
 	
