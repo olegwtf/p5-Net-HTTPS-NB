@@ -125,6 +125,7 @@ determine when connection completed.
 
 sub new {
 	my ($class, %args) = @_;
+	my $ssl_opts = delete $args{ssl_opts}; # Do not pass SSL options to Net::HTTP
 	
 	unless (exists $args{PeerPort}) {
 		$args{PeerPort} = 443;
@@ -135,7 +136,8 @@ sub new {
 		or return;
 	
 	# and upgrade it to SSL then
-	$class->start_SSL($self, SSL_startHandshake => 0);
+	$class->start_SSL($self, $ssl_opts ? %$ssl_opts : (), SSL_startHandshake => 0)
+		or return;
 	
 	if (!exists($args{Blocking}) || $args{Blocking}) {
 		# blocking connect
