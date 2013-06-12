@@ -159,7 +159,7 @@ sub new {
 
 Returns true value when connection completed (https handshake done). Otherwise
 returns false. In this case you can check $HTTPS_ERROR to determine what handshake
-need for, read or write. $HTTPS_ERROR could be HTTPS_NEED_READ or HTTPS_NEED_WRITE
+need for, read or write. $HTTPS_ERROR could be HTTPS_WANT_READ or HTTPS_WANT_WRITE
 respectively. See L</SYNOPSIS>.
 
 =cut
