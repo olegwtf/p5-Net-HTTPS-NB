@@ -4,6 +4,7 @@ use strict;
 use Net::HTTP;
 use IO::Socket::SSL 0.98;
 use Exporter;
+use Errno qw(EWOULDBLOCK EAGAIN);
 use vars qw($VERSION @ISA @EXPORT $HTTPS_ERROR);
 
 $VERSION = 0.13;
@@ -176,7 +177,7 @@ sub new {
 		$self->connected()
 			or return;
 	}
-	# non-blocking handshake will be started after SUPER::connected
+	# non-blocking handshake will be started after plain socket connected
 	
 	return $self;
 }
@@ -195,31 +196,14 @@ sub connected {
 	
 	if (exists ${*$self}{httpsnb_connected}) {
 		# already connected or disconnected
-		return ${*$self}{httpsnb_connected};
+		return ${*$self}{httpsnb_connected} && getpeername($self);
 	}
 	
-	if (${*$self}{httpsnb_super_connected}) {
-		# SUPER already connected
-		# start/continue SSL handshaking
-		if ( $self->connect_SSL() ) {
-			return ${*$self}{httpsnb_connected} = 1;
-		}
-		return 0;
+	if ($self->connect_SSL()) {
+		return ${*$self}{httpsnb_connected} = 1;
 	}
-	
-	if ($self->SUPER::connected) {
-		# SUPER just connected. Start handshaking
-		${*$self}{httpsnb_super_connected} = 1;
-		return $self->connected;
-	}
-	
-	# SUPER still not connected
-	if ($! = $self->sockopt(SO_ERROR)) {
-		# some error while connecting
+	elsif ($! != EWOULDBLOCK && $! != EAGAIN) {
 		$HTTPS_ERROR = $!;
-	}
-	else {
-		$HTTPS_ERROR = HTTPS_WANT_WRITE;
 	}
 	return 0;
 }
