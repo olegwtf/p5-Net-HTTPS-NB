@@ -261,11 +261,24 @@ sub read_entity_body {
 	${*$self}{'httpsnb_reading'} = 1;
 	${*$self}{'httpsnb_read_count'} = 0;
 	${*$self}{'httpsnb_save'} = ${*$self}{'http_buf'};
+	
+	my $chunked = ${*$self}{'http_chunked'};
+	my $bytes   = ${*$self}{'http_bytes'};
+	my $first_body = ${*$self}{'http_first_body'};
+	my @request_method = @{${*$self}{'http_request_method'}}; 
+	
 	# XXX I'm not so sure this does the correct thing in case of
 	# transfer-encoding tranforms
 	my $n = eval { $self->SUPER::read_entity_body(@_) };
 	${*$self}{'httpsnb_reading'} = 0;
 	if ($@ || (!defined($n) && $HTTPS_ERROR == HTTPS_WANT_READ)) {
+		if ($@ eq "Multi-read\n") {
+			# Reset some internals of Net::HTTP::Methods
+			${*$self}{'http_chunked'} = $chunked;
+			${*$self}{'http_bytes'} = $bytes;
+			${*$self}{'http_first_body'} = $first_body;
+			${*$self}{'http_request_method'} = \@request_method;
+		}
 		$_[0] = "";
 		return -1;
 	}
