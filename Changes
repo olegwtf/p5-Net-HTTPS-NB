@@ -1,5 +1,10 @@
 Revision history for Perl extension Net::HTTPS::NB.
 
+0.14  Wed Oct 14 19:08:57 NOVT 2015
+       - Fix reading of the chunked body
+       - Fix examples in the documentation
+       - Fix compatibility with IO::Socket::IP backend for IO::Socket::SSL
+
 0.13  Wed Jun 12 21:31:43 2013
        - Fix for rt #85931: ability to specify SSL_* options
 

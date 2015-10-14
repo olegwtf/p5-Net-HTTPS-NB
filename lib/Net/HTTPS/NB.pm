@@ -7,7 +7,7 @@ use Exporter;
 use Errno qw(EWOULDBLOCK EAGAIN);
 use vars qw($VERSION @ISA @EXPORT $HTTPS_ERROR);
 
-$VERSION = 0.13;
+$VERSION = 0.14;
 
 =head1 NAME
 
@@ -303,7 +303,7 @@ L<Net::HTTP>, L<Net::HTTP::NB>, L<Net::HTTPS>
 
 =head1 COPYRIGHT
 
-Copyright 2011-2013 Oleg G <oleg@cpan.org>.
+Copyright 2011-2015 Oleg G <oleg@cpan.org>.
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
