@@ -16,29 +16,55 @@ Net::HTTPS::NB - Non-blocking HTTPS client
 
 =over
 
-=item Example from L<Net::HTTP::NB>
+=item Example of sending request and receiving response
 
+	use strict;
 	use Net::HTTPS::NB;
 	use IO::Select;
-	use strict;
-
+	use Errno qw/EAGAIN EWOULDBLOCK/;
+	
 	my $s = Net::HTTPS::NB->new(Host => "pause.perl.org") || die $@;
 	$s->write_request(GET => "/");
-
+	
 	my $sel = IO::Select->new($s);
-
+	
 	READ_HEADER: {
 		die "Header timeout" unless $sel->can_read(10);
 		my($code, $mess, %h) = $s->read_response_headers;
 		redo READ_HEADER unless $code;
 	}
-
+	
+	# Net::HTTPS::NB uses internal buffer for reading
+	# so we should check it before socket check by calling read_entity_body()
+	# it is error to wait data on socket before read_entity_body() will return undef
+	# with $! set to EAGAIN or EWOULDBLOCK
+	# make socket non-blocking, so read_entity_body() will not block
+	$s->blocking(0);
+	
 	while (1) {
-		die "Body timeout" unless $sel->can_read(10);
 		my $buf;
-		my $n = $s->read_entity_body($buf, 1024);
-		last unless $n;
-		print $buf;
+		my $n;
+		# try to read until error or all data received
+		while (1) {
+			my $tmp_buf;
+			$n = $s->read_entity_body($tmp_buf, 1024);
+			if ($n == -1 || (!defined($n) && ($! == EWOULDBLOCK || $! == EAGAIN))) {
+				last; # no data available this time
+			}
+			elsif ($n) {
+				$buf .= $tmp_buf; # data received
+			}
+			elsif (defined $n) {
+				last; # $n == 0, all readed
+			}
+			else {
+				die "Read error occured: ", $!; # $n == undef
+			}
+		}
+	
+		print $buf if length $buf;
+		last if defined $n && $n == 0; # all readed
+		die "Body timeout" unless $sel->can_read(10); # wait for new data
 	}
 
 =item Example of non-blocking connect
@@ -289,7 +315,7 @@ sub read_entity_body {
 
 =head1 SEE ALSO
 
-L<Net::HTTP>, L<Net::HTTP::NB>
+L<Net::HTTP>, L<Net::HTTP::NB>, L<Net::HTTPS>
 
 =head1 COPYRIGHT
 
