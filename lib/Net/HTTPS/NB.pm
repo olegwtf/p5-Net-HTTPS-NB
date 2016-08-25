@@ -168,8 +168,8 @@ sub new {
 	my $self = Net::HTTP->new(%args)
 		or return;
 	
-	# and upgrade it to SSL then
-	$class->start_SSL($self, %ssl_opts, SSL_startHandshake => 0)
+	# and upgrade it to SSL then                                        for SNI
+	$class->start_SSL($self, %ssl_opts, SSL_startHandshake => 0, PeerHost => $args{Host})
 		or return;
 	
 	if (!exists($args{Blocking}) || $args{Blocking}) {
