@@ -23,25 +23,25 @@ Net::HTTPS::NB - Non-blocking HTTPS client
 	use Net::HTTPS::NB;
 	use IO::Select;
 	use Errno qw/EAGAIN EWOULDBLOCK/;
-	
+
 	my $s = Net::HTTPS::NB->new(Host => "pause.perl.org") || die $@;
 	$s->write_request(GET => "/");
-	
+
 	my $sel = IO::Select->new($s);
-	
+
 	READ_HEADER: {
 		die "Header timeout" unless $sel->can_read(10);
 		my($code, $mess, %h) = $s->read_response_headers;
 		redo READ_HEADER unless $code;
 	}
-	
+
 	# Net::HTTPS::NB uses internal buffer for reading
 	# so we should check it before socket check by calling read_entity_body()
 	# it is error to wait data on socket before read_entity_body() will return undef
 	# with $! set to EAGAIN or EWOULDBLOCK
 	# make socket non-blocking, so read_entity_body() will not block
 	$s->blocking(0);
-	
+
 	while (1) {
 		my $buf;
 		my $n;
@@ -62,7 +62,7 @@ Net::HTTPS::NB - Non-blocking HTTPS client
 				die "Read error occured: ", $!; # $n == undef
 			}
 		}
-	
+
 		print $buf if length $buf;
 		last if defined $n && $n == 0; # all readed
 		die "Body timeout" unless $sel->can_read(10); # wait for new data
@@ -101,7 +101,7 @@ allows non-blocking connect.
 
 =over
 
-=item If read_response_headers() did not see enough data to complete the headers an empty list is returned. 
+=item If read_response_headers() did not see enough data to complete the headers an empty list is returned.
 
 =item If read_entity_body() did not see new entity data in its read the value -1 is returned.
 
@@ -152,33 +152,36 @@ determine when connection completed.
 
 sub new {
 	my ($class, %args) = @_;
-	
+
 	my %ssl_opts;
 	while (my $name = each %args) {
 		if (substr($name, 0, 4) eq 'SSL_') {
 			$ssl_opts{$name} = delete $args{$name};
 		}
 	}
-	
+
 	unless (exists $args{PeerPort}) {
 		$args{PeerPort} = 443;
 	}
-	
+
 	# create plain socket first
 	my $self = Net::HTTP->new(%args)
 		or return;
-	
+
 	# and upgrade it to SSL then
-	$class->start_SSL($self, %ssl_opts, SSL_startHandshake => 0)
-		or return;
-	
+	$class->start_SSL($self, %ssl_opts,
+       SSL_startHandshake => 0,
+       PeerHost => $args{PeerAddr},  # IDK if should be using $args{Host} instead of PeerAddr
+       PeerPort => $args{PeerPort}
+    ) or return;
+
 	if (!exists($args{Blocking}) || $args{Blocking}) {
 		# blocking connect
 		$self->connected()
 			or return;
 	}
 	# non-blocking handshake will be started after plain socket connected
-	
+
 	return $self;
 }
 
@@ -193,12 +196,12 @@ respectively. See L</SYNOPSIS>.
 
 sub connected {
 	my $self = shift;
-	
+
 	if (exists ${*$self}{httpsnb_connected}) {
 		# already connected or disconnected
 		return ${*$self}{httpsnb_connected} && getpeername($self);
 	}
-	
+
 	if ($self->connect_SSL()) {
 		return ${*$self}{httpsnb_connected} = 1;
 	}
@@ -240,12 +243,12 @@ sub sysread {
 		# not from our methods
 		return $self->SUPER::sysread(@_);
 	}
-	
+
 	if (${*$self}{'httpsnb_read_count'}++) {
 		${*$self}{'http_buf'} = ${*$self}{'httpsnb_save'};
 		die "Multi-read\n";
 	}
-	
+
 	my $offset = $_[2] || 0;
 	my $n = $self->SUPER::sysread($_[0], $_[1], $offset);
 	${*$self}{'httpsnb_save'} .= substr($_[0], $offset);
@@ -271,12 +274,12 @@ sub read_entity_body {
 	${*$self}{'httpsnb_reading'} = 1;
 	${*$self}{'httpsnb_read_count'} = 0;
 	${*$self}{'httpsnb_save'} = ${*$self}{'http_buf'};
-	
+
 	my $chunked = ${*$self}{'http_chunked'};
 	my $bytes   = ${*$self}{'http_bytes'};
 	my $first_body = ${*$self}{'http_first_body'};
-	my @request_method = @{${*$self}{'http_request_method'}}; 
-	
+	my @request_method = @{${*$self}{'http_request_method'}};
+
 	# XXX I'm not so sure this does the correct thing in case of
 	# transfer-encoding tranforms
 	my $n = eval { $self->SUPER::read_entity_body(@_) };
