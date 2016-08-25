@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::HTTPS::NB.
 
+0.15  Thu Aug 25 23:42:24 NOVT 2016
+       - Add SNI support (gh #1)
+
 0.14  Wed Oct 14 19:08:57 NOVT 2015
        - Fix reading of the chunked body
        - Fix examples in the documentation
