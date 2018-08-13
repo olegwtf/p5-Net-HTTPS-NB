@@ -169,7 +169,7 @@ sub new {
 		or return;
 	
 	# and upgrade it to SSL then                                        for SNI
-	$class->start_SSL($self, %ssl_opts, SSL_startHandshake => 0, PeerHost => $args{Host})
+	$class->start_SSL($self, %ssl_opts, SSL_startHandshake => 0, PeerHost => $args{Host} || $args{PeerHost} || $args{PeerAddr})
 		or return;
 	
 	if (!exists($args{Blocking}) || $args{Blocking}) {
