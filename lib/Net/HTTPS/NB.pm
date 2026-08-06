@@ -7,7 +7,7 @@ use Exporter;
 use Errno qw(EWOULDBLOCK EAGAIN);
 use vars qw($VERSION @ISA @EXPORT $HTTPS_ERROR);
 
-$VERSION = 0.15;
+$VERSION = 0.16;
 
 =head1 NAME
 
